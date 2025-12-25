@@ -1,34 +1,37 @@
 # Currency Swap Form
 
-Một form swap tiền tệ hiện đại và trực quan được xây dựng với Vite.
+A modern and intuitive currency swap form built with Vite.
 
-## Tính năng
+## Features
 
-- ✅ **Token Selection**: Chọn token từ danh sách với icons từ GitHub
-- ✅ **Real-time Exchange Rate**: Tính toán tỷ giá tự động dựa trên API
-- ✅ **Input Validation**: Kiểm tra và hiển thị lỗi khi nhập sai
-- ✅ **Loading States**: Hiển thị trạng thái loading khi swap
-- ✅ **Swap Direction**: Đổi chiều swap với một click
-- ✅ **Max Button**: Chọn số tiền tối đa
-- ✅ **Responsive Design**: Tối ưu cho mobile và desktop
-- ✅ **Modern UI/UX**: Giao diện đẹp với gradient và animations
+- ✅ **Token Selection**: Select tokens from a list with icons from GitHub
+- ✅ **Real-time Exchange Rate**: Automatically calculates exchange rates based on API
+- ✅ **Auto-refresh Prices**: Automatically updates token prices every 30 seconds
+- ✅ **Mock Balances**: Displays realistic mock token balances
+- ✅ **Input Validation**: Validates inputs and shows error messages
+- ✅ **Loading States**: Shows loading indicator during swap
+- ✅ **Swap Direction**: Swap direction with one click
+- ✅ **Max Button**: Select maximum amount
+- ✅ **Settings Modal**: Customize slippage tolerance and transaction deadline
+- ✅ **Responsive Design**: Optimized for mobile and desktop
+- ✅ **Modern UI/UX**: Beautiful interface with gradients and animations
 
-## Cài đặt
+## Installation
 
 ```bash
 cd frontend/src/problem2
 npm install
 ```
 
-## Chạy Development Server
+## Development Server
 
 ```bash
 npm run dev
 ```
 
-Server sẽ chạy tại `http://localhost:3000`
+Server will run at `http://localhost:3000`
 
-## Build Production
+## Production Build
 
 ```bash
 npm run build
@@ -40,13 +43,13 @@ npm run build
 npm run preview
 ```
 
-## Cấu trúc Project
+## Project Structure
 
 ```
 problem2/
 ├── index.html          # HTML structure
-├── style.css           # Styles và animations
-├── script.js           # Logic và API integration
+├── style.css           # Styles and animations
+├── script.js           # Logic and API integration
 ├── package.json        # Dependencies
 ├── vite.config.js      # Vite configuration
 └── README.md           # Documentation
@@ -57,13 +60,30 @@ problem2/
 - **Token Prices**: `https://interview.switcheo.com/prices.json`
 - **Token Icons**: `https://raw.githubusercontent.com/Switcheo/token-icons/main/tokens/{SYMBOL}.svg`
 
-## Cách sử dụng
+## How to Use
 
-1. Chọn token bạn muốn gửi (You pay)
-2. Chọn token bạn muốn nhận (You receive)
-3. Nhập số lượng muốn swap
-4. Xem tỷ giá tự động được tính toán
-5. Click "CONFIRM SWAP" để thực hiện swap
-6. Sử dụng nút swap (↕) để đổi chiều
-7. Sử dụng nút "MAX" để chọn số tiền tối đa
+1. Select the token you want to send (You pay)
+2. Select the token you want to receive (You receive)
+3. Enter the amount you want to swap
+4. View the automatically calculated exchange rate
+5. Click "CONFIRM SWAP" to execute the swap
+6. Use the swap button (↕) to swap direction
+7. Use the "MAX" button to select maximum amount
+8. Click the ⚙️ icon (Settings) to customize slippage and deadline
+
+## Features Detail
+
+### Auto-refresh Prices
+Prices automatically reload every 30 seconds to ensure exchange rates are always up to date.
+
+### Mock Balances
+Each token has a mock balance based on its value:
+- High value tokens (>$100): 0-10 tokens
+- Medium value tokens ($10-$100): 0-100 tokens
+- Low value tokens ($1-$10): 0-1000 tokens
+- Very low value tokens (<$1): 0-10000 tokens
+
+### Settings Modal
+- **Slippage Tolerance**: Choose from 0.1%, 0.5%, 1% or custom (0-50%)
+- **Transaction Deadline**: Maximum time for transaction (1-60 minutes)
 

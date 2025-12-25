@@ -488,6 +488,139 @@ body {
   color: var(--text-muted);
 }
 
+/* Settings Modal */
+.settings-content {
+  max-width: 420px;
+}
+
+.settings-body {
+  padding: 24px;
+}
+
+.setting-group {
+  margin-bottom: 24px;
+}
+
+.setting-group:last-child {
+  margin-bottom: 0;
+}
+
+.setting-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.slippage-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.slippage-btn {
+  background: var(--background);
+  border: 2px solid var(--border);
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.slippage-btn:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.slippage-btn.active {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.custom-slippage-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 100px;
+}
+
+.custom-slippage-wrapper input {
+  width: 100%;
+  padding: 10px 28px 10px 16px;
+  background: var(--background);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.custom-slippage-wrapper input:focus {
+  border-color: var(--primary-color);
+}
+
+.custom-slippage-wrapper input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.slippage-percent {
+  position: absolute;
+  right: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.setting-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.deadline-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.deadline-wrapper input {
+  width: 100px;
+  padding: 10px 60px 10px 16px;
+  background: var(--background);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.deadline-wrapper input:focus {
+  border-color: var(--primary-color);
+}
+
+.deadline-unit {
+  position: absolute;
+  right: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  pointer-events: none;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .swap-card {

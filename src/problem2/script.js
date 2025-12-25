@@ -8,6 +8,12 @@ let availableTokens = [];
 let fromToken = null;
 let toToken = null;
 let isLoading = false;
+let tokenBalances = {}; // Mock balances for each token
+let settings = {
+  slippage: 0.5, // Default 0.5% slippage tolerance
+  deadline: 20 // Default 20 minute deadline
+};
+let refreshInterval = null;
 
 // DOM Elements
 const elements = {
@@ -35,7 +41,8 @@ const elements = {
   modalClose: document.getElementById('modal-close'),
   tokenSearch: document.getElementById('token-search'),
   tokenList: document.getElementById('token-list'),
-  maxFromBtn: document.getElementById('max-from-btn')
+  maxFromBtn: document.getElementById('max-from-btn'),
+  settingsBtn: document.getElementById('settings-btn')
 };
 
 let currentModalType = null; // 'from' or 'to'
@@ -46,8 +53,9 @@ async function init() {
     await loadTokenPrices();
     setupEventListeners();
     updateSubmitButton();
+    // Set up auto-refresh every 30 seconds
+    refreshInterval = setInterval(loadTokenPrices, 30000);
   } catch (error) {
-    console.error('Failed to initialize:', error);
     // Show user-friendly error message
     const errorMsg = document.createElement('div');
     errorMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--error); color: white; padding: 16px; border-radius: 8px; z-index: 10000; max-width: 300px;';
@@ -68,15 +76,13 @@ async function loadTokenPrices() {
       // Add cache control to avoid stale data
       cache: 'no-cache'
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    console.log('API Response type:', Array.isArray(data) ? 'Array' : typeof data);
-    console.log('API Response sample:', Array.isArray(data) ? data.slice(0, 3) : Object.entries(data).slice(0, 3));
-    
+
     // Handle different data formats
     if (Array.isArray(data)) {
       // If API returns array, convert to object
@@ -91,20 +97,16 @@ async function loadTokenPrices() {
           }
         }
       });
-      console.log('Converted array to object. Keys:', Object.keys(tokenPrices).length);
     } else if (typeof data === 'object' && data !== null) {
       // Direct object format: {BTC: 50000, ETH: 3000, ...}
       tokenPrices = data;
     } else {
       throw new Error('Invalid data format from API');
     }
-    
-    console.log('Token Prices:', tokenPrices);
-    
+
     // Filter tokens that have prices and create token list
     const tokenKeys = Object.keys(tokenPrices);
-    console.log('Total token keys:', tokenKeys.length);
-    
+
     availableTokens = tokenKeys
       .map(token => {
         const price = tokenPrices[token];
@@ -117,28 +119,24 @@ async function loadTokenPrices() {
       })
       .filter(token => {
         // Accept tokens with valid numeric prices > 0
-        const isValid = !isNaN(token.price) && 
-                       isFinite(token.price) && 
+        const isValid = !isNaN(token.price) &&
+                       isFinite(token.price) &&
                        token.price > 0;
-        if (!isValid) {
-          console.log(`Filtered out token ${token.symbol}:`, token.rawPrice);
-        }
         return isValid;
       })
-      .map(token => ({
-        symbol: token.symbol,
-        price: token.price,
-        icon: `${TOKEN_ICON_BASE}${token.symbol}.svg`
-      }))
+      .map(token => {
+        // Generate mock balance for each token
+        const balance = generateMockBalance(token.symbol, token.price);
+        tokenBalances[token.symbol] = balance;
+        return {
+          symbol: token.symbol,
+          price: token.price,
+          icon: `${TOKEN_ICON_BASE}${token.symbol}.svg`
+        };
+      })
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
-    
-    console.log('Available Tokens:', availableTokens.length);
-    console.log('Sample tokens:', availableTokens.slice(0, 5));
-    
+
     if (availableTokens.length === 0) {
-      console.warn('No tokens found with valid prices');
-      console.warn('Sample tokenPrices:', Object.entries(tokenPrices).slice(0, 10));
-      // Show error in UI
       if (elements.tokenList) {
         elements.tokenList.innerHTML = `
           <div class="no-tokens">
@@ -146,27 +144,53 @@ async function loadTokenPrices() {
             <p style="font-size: 12px; margin-top: 8px; color: var(--text-muted);">
               Failed to load tokens. Please check your connection and refresh the page.
             </p>
-            <p style="font-size: 11px; margin-top: 4px; color: var(--text-muted);">
-              Check browser console for details.
-            </p>
           </div>
         `;
       }
     } else {
       renderTokenList();
     }
+
+    // Update balances if tokens are selected
+    if (fromToken) {
+      updateFromTokenDisplay();
+    }
+    if (toToken) {
+      updateToTokenDisplay();
+    }
   } catch (error) {
-    console.error('Error loading token prices:', error);
-    elements.tokenList.innerHTML = `
-      <div class="no-tokens">
-        <p>Error loading tokens</p>
-        <p style="font-size: 12px; margin-top: 8px; color: var(--error);">
-          ${error.message}
-        </p>
-      </div>
-    `;
+    if (elements.tokenList) {
+      elements.tokenList.innerHTML = `
+        <div class="no-tokens">
+          <p>Error loading tokens</p>
+          <p style="font-size: 12px; margin-top: 8px; color: var(--error);">
+            ${error.message}
+          </p>
+        </div>
+      `;
+    }
     throw error;
   }
+}
+
+// Generate mock balance for a token
+function generateMockBalance(symbol, price) {
+  // Generate random balance based on price to keep realistic values
+  // Higher price tokens have lower amounts, lower price tokens have higher amounts
+  const baseAmount = price > 100 ? Math.random() * 10 :
+                     price > 10 ? Math.random() * 100 :
+                     price > 1 ? Math.random() * 1000 :
+                     Math.random() * 10000;
+
+  // Round to reasonable precision based on price
+  if (price > 100) {
+    return parseFloat(baseAmount.toFixed(4));
+  } else if (price > 10) {
+    return parseFloat(baseAmount.toFixed(2));
+  } else if (price > 1) {
+    return parseFloat(baseAmount.toFixed(1));
+  }
+  return parseFloat(baseAmount.toFixed(0));
 }
 
 // Setup event listeners
@@ -174,46 +198,49 @@ function setupEventListeners() {
   // Token selector clicks
   elements.fromTokenSelector.addEventListener('click', () => openTokenModal('from'));
   elements.toTokenSelector.addEventListener('click', () => openTokenModal('to'));
-  
+
+  // Settings button
+  elements.settingsBtn.addEventListener('click', openSettingsModal);
+
   // Modal close
   elements.modalClose.addEventListener('click', closeTokenModal);
   elements.tokenModal.addEventListener('click', (e) => {
     if (e.target === elements.tokenModal) closeTokenModal();
   });
-  
+
   // Token search
   elements.tokenSearch.addEventListener('input', handleTokenSearch);
-  
+
   // Amount inputs
   elements.fromAmount.addEventListener('input', handleFromAmountChange);
   elements.fromAmount.addEventListener('blur', validateFromAmount);
-  
+
   // Swap direction button
   elements.swapDirectionBtn.addEventListener('click', swapTokens);
-  
+
   // Max button
   elements.maxFromBtn.addEventListener('click', setMaxAmount);
-  
+
   // Form submit
   elements.form.addEventListener('submit', handleSubmit);
-  
+
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeTokenModal();
+    if (e.key === 'Escape') {
+      closeTokenModal();
+      closeSettingsModal();
+    }
   });
 }
 
 // Open token selection modal
 function openTokenModal(type) {
   if (availableTokens.length === 0) {
-    console.warn('No tokens available to select');
     // Try to reload tokens
-    loadTokenPrices().catch(err => {
-      console.error('Failed to reload tokens:', err);
-    });
+    loadTokenPrices().catch(() => {});
     return;
   }
-  
+
   currentModalType = type;
   elements.modalTitle.textContent = `Select ${type === 'from' ? 'token to pay' : 'token to receive'}`;
   elements.tokenModal.style.display = 'flex';
@@ -238,10 +265,9 @@ function handleTokenSearch(e) {
 // Render token list in modal
 function renderTokenList(searchQuery = '') {
   if (!elements.tokenList) {
-    console.error('Token list element not found');
     return;
   }
-  
+
   // If no tokens loaded at all
   if (availableTokens.length === 0) {
     elements.tokenList.innerHTML = `
@@ -331,7 +357,7 @@ function updateFromTokenDisplay() {
     elements.fromBalance.textContent = '0.00';
     return;
   }
-  
+
   elements.fromTokenIcon.src = fromToken.icon;
   elements.fromTokenIcon.alt = fromToken.symbol;
   elements.fromTokenIcon.style.display = 'block';
@@ -339,7 +365,9 @@ function updateFromTokenDisplay() {
     this.style.display = 'none';
   };
   elements.fromTokenSymbol.textContent = fromToken.symbol;
-  elements.fromBalance.textContent = '0.00';
+  // Use mock balance
+  const balance = tokenBalances[fromToken.symbol] || 0;
+  elements.fromBalance.textContent = formatNumber(balance, balance > 100 ? 2 : 4);
 }
 
 // Update to token display
@@ -350,7 +378,7 @@ function updateToTokenDisplay() {
     elements.toBalance.textContent = '0.00';
     return;
   }
-  
+
   elements.toTokenIcon.src = toToken.icon;
   elements.toTokenIcon.alt = toToken.symbol;
   elements.toTokenIcon.style.display = 'block';
@@ -358,7 +386,9 @@ function updateToTokenDisplay() {
     this.style.display = 'none';
   };
   elements.toTokenSymbol.textContent = toToken.symbol;
-  elements.toBalance.textContent = '0.00';
+  // Use mock balance
+  const balance = tokenBalances[toToken.symbol] || 0;
+  elements.toBalance.textContent = formatNumber(balance, balance > 100 ? 2 : 4);
 }
 
 // Handle from amount change
@@ -584,6 +614,107 @@ function resetForm() {
   elements.exchangeRateInfo.style.display = 'none';
   clearError('from');
   clearError('to');
+}
+
+// Open settings modal
+function openSettingsModal() {
+  const settingsModal = document.getElementById('settings-modal');
+  if (!settingsModal) return;
+
+  settingsModal.style.display = 'flex';
+
+  // Set current values
+  const slippageBtns = document.querySelectorAll('.slippage-btn');
+  const customSlippage = document.getElementById('custom-slippage');
+  const deadlineInput = document.getElementById('deadline-input');
+
+  // Set slippage buttons state
+  slippageBtns.forEach(btn => {
+    const value = parseFloat(btn.dataset.value);
+    if (value === settings.slippage) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Set custom slippage
+  if (![0.1, 0.5, 1].includes(settings.slippage)) {
+    customSlippage.value = settings.slippage.toString();
+    customSlippage.disabled = false;
+    slippageBtns.forEach(btn => btn.classList.remove('active'));
+  } else {
+    customSlippage.value = '';
+    customSlippage.disabled = true;
+  }
+
+  // Set deadline
+  deadlineInput.value = settings.deadline.toString();
+
+  // Remove old event listeners
+  slippageBtns.forEach(btn => {
+    btn.onclick = null;
+  });
+  customSlippage.oninput = null;
+  deadlineInput.oninput = null;
+
+  // Add event listeners for slippage buttons
+  slippageBtns.forEach(btn => {
+    btn.onclick = function() {
+      const value = parseFloat(this.dataset.value);
+      settings.slippage = value;
+      customSlippage.value = '';
+      customSlippage.disabled = true;
+
+      slippageBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    };
+  });
+
+  // Add event listener for custom slippage
+  customSlippage.oninput = function() {
+    const value = parseFloat(this.value);
+    if (!isNaN(value) && value >= 0 && value <= 50) {
+      settings.slippage = value;
+      customSlippage.disabled = false;
+      slippageBtns.forEach(b => b.classList.remove('active'));
+    }
+  };
+
+  // Add event listener for deadline
+  deadlineInput.oninput = function() {
+    const value = parseInt(this.value);
+    if (!isNaN(value) && value >= 1 && value <= 60) {
+      settings.deadline = value;
+    }
+  };
+
+  // Add close button event listener
+  const settingsClose = document.getElementById('settings-close');
+  if (settingsClose) {
+    settingsClose.onclick = closeSettingsModal;
+  }
+
+  // Click outside to close
+  settingsModal.onclick = function(e) {
+    if (e.target === settingsModal) {
+      closeSettingsModal();
+    }
+  };
+}
+
+// Close settings modal
+function closeSettingsModal() {
+  const settingsModal = document.getElementById('settings-modal');
+  if (!settingsModal) return;
+  settingsModal.style.display = 'none';
+
+  // Remove event listeners
+  const settingsClose = document.getElementById('settings-close');
+  if (settingsClose) {
+    settingsClose.onclick = null;
+  }
+  settingsModal.onclick = null;
 }
 
 // Show error message
